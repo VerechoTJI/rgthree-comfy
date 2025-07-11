@@ -1,19 +1,19 @@
-import {LGraphCanvas, LGraphNode, Vector2, LGraphNodeConstructor} from "@comfyorg/litegraph";
-import type {CanvasMouseEvent} from "@comfyorg/litegraph/dist/types/events.js";
-import type {ISerialisedNode} from "@comfyorg/litegraph/dist/types/serialisation.js";
-import type {ComfyNodeDef} from "typings/comfy.js";
+import { LGraphCanvas, LGraphNode, Vector2, LGraphNodeConstructor } from "@comfyorg/litegraph";
+import type { CanvasMouseEvent } from "@comfyorg/litegraph/dist/types/events.js";
+import type { ISerialisedNode } from "@comfyorg/litegraph/dist/types/serialisation.js";
+import type { ComfyNodeDef } from "typings/comfy.js";
 
-import {app} from "scripts/app.js";
-import {api} from "scripts/api.js";
-import {RgthreeBaseServerNode} from "./base_node.js";
-import {NodeTypesString} from "./constants.js";
-import {addConnectionLayoutSupport} from "./utils.js";
-import {RgthreeBaseHitAreas, RgthreeBaseWidget, RgthreeBaseWidgetBounds} from "./utils_widgets.js";
-import {measureText} from "./utils_canvas.js";
-import {Point, Size} from "@comfyorg/litegraph/dist/interfaces.js";
+import { app } from "scripts/app.js";
+import { api } from "scripts/api.js";
+import { RgthreeBaseServerNode } from "./base_node.js";
+import { NodeTypesString } from "./constants.js";
+import { addConnectionLayoutSupport } from "./utils.js";
+import { RgthreeBaseHitAreas, RgthreeBaseWidget, RgthreeBaseWidgetBounds } from "./utils_widgets.js";
+import { measureText } from "./utils_canvas.js";
+import { Point, Size } from "@comfyorg/litegraph/dist/interfaces.js";
 
-type ComfyImageServerData = {filename: string; type: string; subfolder: string};
-type ComfyImageData = {name: string; selected: boolean; url: string; img?: HTMLImageElement};
+type ComfyImageServerData = { filename: string; type: string; subfolder: string };
+type ComfyImageData = { name: string; selected: boolean; url: string; img?: HTMLImageElement };
 type OldExecutedPayload = {
   images: ComfyImageServerData[];
 };
@@ -24,8 +24,7 @@ type ExecutedPayload = {
 
 function imageDataToUrl(data: ComfyImageServerData) {
   return api.apiURL(
-    `/view?filename=${encodeURIComponent(data.filename)}&type=${data.type}&subfolder=${
-      data.subfolder
+    `/view?filename=${encodeURIComponent(data.filename)}&type=${data.type}&subfolder=${data.subfolder
     }${app.getPreviewFormatParam()}${app.getRandParam()}`,
   );
 }
@@ -38,6 +37,7 @@ export class RgthreeImageComparer extends RgthreeBaseServerNode {
   static override type = NodeTypesString.IMAGE_COMPARER;
   static comfyClass = NodeTypesString.IMAGE_COMPARER;
 
+  //TODO:Fix problem in multi-pair comparison
   // These is what the core preview image node uses to show the context menu. May not be that helpful
   // since it likely will always be "0" when a context menu is invoked without manually changing
   // something.
@@ -93,7 +93,7 @@ export class RgthreeImageComparer extends RgthreeBaseServerNode {
           url: imageDataToUrl(d),
         });
       }
-      this.canvasWidget!.value = {images: imagesToChoose};
+      this.canvasWidget!.value = { images: imagesToChoose };
     }
   }
 
@@ -104,7 +104,7 @@ export class RgthreeImageComparer extends RgthreeBaseServerNode {
         serialised.widgets_values![index] = (
           this.widgets[index] as unknown as RgthreeImageComparerWidget
         ).value.images.map((d) => {
-          d = {...d};
+          d = { ...d };
           delete d.img;
           return d;
         });
@@ -160,7 +160,7 @@ export class RgthreeImageComparer extends RgthreeBaseServerNode {
   override onMouseMove(event: MouseEvent, pos: Point, canvas: LGraphCanvas): void {
     super.onMouseMove?.(event, pos, canvas);
     this.pointerOverPos = [...pos] as Point;
-    this.imageIndex = this.pointerOverPos[0] > this.size[0] / 2 ? 1 : 0;
+    this.imageIndex = this.pointerOverPos[0] > this.size[0] / 2 ? 0 : 1;
   }
 
   override getHelp(): string {
@@ -252,7 +252,7 @@ class RgthreeImageComparerWidget extends RgthreeBaseWidget<RgthreeImageComparerW
     this.node = node;
   }
 
-  private _value: RgthreeImageComparerWidgetValue = {images: []};
+  private _value: RgthreeImageComparerWidgetValue = { images: [] };
 
   set value(v: RgthreeImageComparerWidgetValue) {
     // Despite `v` typed as RgthreeImageComparerWidgetValue, we may have gotten an array of strings
@@ -262,7 +262,7 @@ class RgthreeImageComparerWidget extends RgthreeBaseWidget<RgthreeImageComparerW
       cleanedVal = v.map((d, i) => {
         if (!d || typeof d === "string") {
           // We usually only have two here, so they're selected.
-          d = {url: d, name: i == 0 ? "A" : "B", selected: true};
+          d = { url: d, name: i == 0 ? "A" : "B", selected: true };
         }
         return d;
       });
@@ -400,14 +400,14 @@ class RgthreeImageComparerWidget extends RgthreeBaseWidget<RgthreeImageComparerW
     }
     const widthMultiplier = image?.img.naturalWidth / targetWidth;
 
-    const sourceX = 0;
+    const sourceX = cropX != null ? (cropX - offsetX) * widthMultiplier : 0;
     const sourceY = 0;
     const sourceWidth =
-      cropX != null ? (cropX - offsetX) * widthMultiplier : image?.img.naturalWidth;
+      cropX != null ? (targetWidth - cropX + offsetX) * widthMultiplier : image?.img.naturalWidth;
     const sourceHeight = image?.img.naturalHeight;
-    const destX = (nodeWidth - targetWidth) / 2;
+    const destX = cropX != null ? cropX : (nodeWidth - targetWidth) / 2;
     const destY = y + (height - targetHeight) / 2;
-    const destWidth = cropX != null ? cropX - offsetX : targetWidth;
+    const destWidth = cropX != null ? targetWidth - (cropX - offsetX) : targetWidth;
     const destHeight = targetHeight;
     ctx.save();
     ctx.beginPath();
@@ -456,11 +456,11 @@ class RgthreeImageComparerWidget extends RgthreeBaseWidget<RgthreeImageComparerW
     const v = [];
     for (const data of this._value.images) {
       // Remove the img since it can't serialize.
-      const d = {...data};
+      const d = { ...data };
       delete d.img;
       v.push(d);
     }
-    return {images: v};
+    return { images: v };
   }
 }
 
