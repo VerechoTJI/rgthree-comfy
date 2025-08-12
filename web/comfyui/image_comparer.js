@@ -109,7 +109,7 @@ export class RgthreeImageComparer extends RgthreeBaseServerNode {
         var _a;
         (_a = super.onMouseMove) === null || _a === void 0 ? void 0 : _a.call(this, event, pos, canvas);
         this.pointerOverPos = [...pos];
-        this.imageIndex = this.pointerOverPos[0] > this.size[0] / 2 ? 1 : 0;
+        this.imageIndex = this.pointerOverPos[0] > this.size[0] / 2 ? 0 : 1;
     }
     getHelp() {
         return `
@@ -315,13 +315,13 @@ class RgthreeImageComparerWidget extends RgthreeBaseWidget {
             offsetX = (nodeWidth - targetWidth) / 2;
         }
         const widthMultiplier = (image === null || image === void 0 ? void 0 : image.img.naturalWidth) / targetWidth;
-        const sourceX = 0;
+        const sourceX = cropX != null ? (cropX - offsetX) * widthMultiplier : 0;
         const sourceY = 0;
-        const sourceWidth = cropX != null ? (cropX - offsetX) * widthMultiplier : image === null || image === void 0 ? void 0 : image.img.naturalWidth;
+        const sourceWidth = cropX != null ? (targetWidth - cropX + offsetX) * widthMultiplier : image === null || image === void 0 ? void 0 : image.img.naturalWidth;
         const sourceHeight = image === null || image === void 0 ? void 0 : image.img.naturalHeight;
-        const destX = (nodeWidth - targetWidth) / 2;
+        const destX = cropX != null ? cropX : (nodeWidth - targetWidth) / 2;
         const destY = y + (height - targetHeight) / 2;
-        const destWidth = cropX != null ? cropX - offsetX : targetWidth;
+        const destWidth = cropX != null ? targetWidth - (cropX - offsetX) : targetWidth;
         const destHeight = targetHeight;
         ctx.save();
         ctx.beginPath();
