@@ -16,6 +16,22 @@
 
 <hr>
 
+# Reminder:
+
+Always update dependencies after merge:
+
+```
+npm install
+```
+
+To build:
+
+```
+npm run build
+```
+
+<hr>
+
 # Original README Content:
 
 A collection of nodes and improvements created while messing around with ComfyUI. I made them for myself to make my workflow cleaner, easier, and faster. You're welcome to try them out. But remember, I made them for my own use cases :)
